@@ -1,3 +1,5 @@
+v0.05    2004-04-30
+	- fix a little bug in the test suite
 v0.04   2004-04-30
         - new maintainer fabpot@cpan.org
         - now include all stemmers from snowball

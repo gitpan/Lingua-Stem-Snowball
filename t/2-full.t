@@ -23,6 +23,7 @@ foreach my $lang (keys %ok_lang) {
 	} else {
 		delete $ok_lang{$lang};
 	}
+	setlocale(LC_CTYPE, $old_locale);
 }
 
 my $tests_file = "stemmers_src/tests.txt";
