@@ -42,7 +42,12 @@ while (<I>) {
 }
 close(I);
 
-plan tests => 3 * $tests + 2 * scalar(keys %ok_lang);
+plan tests => 3 * $tests + 2 * scalar(keys %ok_lang) + 1;
+
+ok(1);
+unless (scalar(keys %ok_lang)) {
+	exit(0);
+}
 
 my $last_lang = '';
 my $stem = Lingua::Stem::Snowball->new();

@@ -8,7 +8,7 @@ use POSIX qw(locale_h);
 use vars qw($VERSION @ISA @EXPORT_OK $AUTOLOAD %EXPORT_TAGS);
 @ISA = qw(Exporter);
 
-$VERSION = '0.05';
+$VERSION = '0.6';
 
 %EXPORT_TAGS = ('all' => [qw(
 	stemmers stem
