@@ -1,3 +1,9 @@
+v0.9	2005-02-07
+	- fix doc ticket #11286 : Error in documentation use of 'english' as valid language descriptor
+	- fix directory mode in CPAN distribution
+	- added 3-subclass.t test file
+	- updated ppport.h
+
 v0.8    2004-08-29
 	- fix ticket #7909 : typo in _get_lang
 	- fix ticket #7910 : Lingua::Stem::Snowball::stem does not allow subclassing

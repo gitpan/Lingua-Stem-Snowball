@@ -8,7 +8,7 @@ use POSIX qw(locale_h);
 use vars qw($VERSION @ISA @EXPORT_OK $AUTOLOAD %EXPORT_TAGS);
 @ISA = qw(Exporter);
 
-$VERSION = '0.8';
+$VERSION = '0.9';
 
 %EXPORT_TAGS = ('all' => [qw(
 	stemmers stem
@@ -44,15 +44,15 @@ sub _get_lang {
 	my $lang_id = Lingua::Stem::Snowball::get_stemmer_id($lang);
 
 	if ($lang_id < 0) {
-		$lang = '';
 		if ($lang_id == -1) {
-			$@ = "Language does not exist";
+			$@ = "Language '$lang' does not exist";
 		} elsif ($lang_id == -2) {
-			$@ = "Can't call init for language";
+			$@ = "Can't call init for language '$lang'";
 		} else {
 			# We cannot be here!
-			$@ = "Unknown error";
+			$@ = "Unknown error for language '$lang'";
 		}
+		$lang = '';
 		$lang_id = 0;
 	}
 
@@ -192,8 +192,10 @@ Lingua::Stem::Snowball - Perl interface to Snowball stemmers.
 
 OO interface:
 
-  my $lang = 'english';
+  my $lang = 'en';
   my $dict = Lingua::Stem::Snowball->new(lang => $lang);
+  # Test if $lang is correct
+  die $@ if ($@);
   my $locale = 'C'; 
 
   my $dict = Lingua::Stem::Snowball->new(lang => $lang, locale => $locale);

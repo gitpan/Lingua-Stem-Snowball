@@ -40,4 +40,5 @@ $s = Lingua::Stem::Snowball->new();
 ok('Lingua::Stem::Snowball', ref($s));
 is($s->lang, '');
 $s->lang('nothing');
-is($@, "Language does not exist");
+is($@, "Language 'nothing' does not exist");
+

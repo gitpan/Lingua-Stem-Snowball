@@ -4,6 +4,8 @@ Snowball.xs
 t/0-load.t
 t/1-stem.t
 t/2-full.t
+t/3-subclass.t
+t/MyStem.pm
 lib/Lingua/Stem/Snowball.pm
 Changes
 MANIFEST
