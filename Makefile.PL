@@ -1,5 +1,5 @@
 $|++;
-
+ 
 BEGIN { require 5.005 }
 
 use strict;
@@ -48,14 +48,14 @@ my @snowballfiles = ('api.h', 'api.c', 'header.h', 'utilities.c');
 
 my $act = "\n";
 foreach my $file (@snowballfiles) {
-	$act .= "$file: $ENV{SNOWBALL_SRC}/q/$file\n\tcp $ENV{SNOWBALL_SRC}/q/$file $file\n";
+	$act .= "$file: $ENV{SNOWBALL_SRC}/q/$file\n\t\$(CP) $ENV{SNOWBALL_SRC}/q/$file $file\n";
 }
 
 my $commonheaders = join(' ', grep { /\.h$/ } @snowballfiles);
 
 foreach my $lang (@stemmers) {
-	$act .= "stem_$lang.h: $ENV{SNOWBALL_STEMMER}/stem_$lang.h\n\tcp $ENV{SNOWBALL_STEMMER}/stem_$lang.h stem_$lang.h\n";
-	$act .= "stem_$lang.c: $ENV{SNOWBALL_STEMMER}/stem_$lang.c $commonheaders stem_$lang.h\n\tcp $ENV{SNOWBALL_STEMMER}/stem_$lang.c stem_$lang.c\n";
+	$act .= "stem_$lang.h: $ENV{SNOWBALL_STEMMER}/stem_$lang.h\n\t\$(CP) $ENV{SNOWBALL_STEMMER}/stem_$lang.h stem_$lang.h\n";
+	$act .= "stem_$lang.c: $ENV{SNOWBALL_STEMMER}/stem_$lang.c $commonheaders stem_$lang.h\n\t\$(CP) $ENV{SNOWBALL_STEMMER}/stem_$lang.c stem_$lang.c\n";
 }  
 
 my $copyfile = join(' ', @snowballfiles, map { "stem_$_.h stem_$_.c" } @stemmers);
