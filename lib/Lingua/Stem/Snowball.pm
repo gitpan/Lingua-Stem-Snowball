@@ -8,7 +8,7 @@ use POSIX qw(locale_h);
 use vars qw($VERSION @ISA @EXPORT_OK $AUTOLOAD %EXPORT_TAGS);
 @ISA = qw(Exporter);
 
-$VERSION = '0.7';
+$VERSION = '0.8';
 
 %EXPORT_TAGS = ('all' => [qw(
 	stemmers stem
@@ -45,13 +45,15 @@ sub _get_lang {
 
 	if ($lang_id < 0) {
 		$lang = '';
-		$lang_id = 0;
 		if ($lang_id == -1) {
-			$@ = "There is no lang '$lang'";
+			$@ = "Language does not exist";
 		} elsif ($lang_id == -2) {
-			$@ = "Can't call init for lang '$lang'";
+			$@ = "Can't call init for language";
+		} else {
+			# We cannot be here!
+			$@ = "Unknown error";
 		}
-		$@ = "Unknown error";
+		$lang_id = 0;
 	}
 
 	return ($lang, $lang_id);
@@ -82,10 +84,10 @@ sub locale {
 }
 
 sub new {
-        my ($class, %opt) = @_;
+	my ($class, %opt) = @_;
 
-        $class = ref($class) || $class;
-        my $self = {};
+	$class = ref($class) || $class;
+	my $self = {};
 
 	$@ = '';
 	if ($opt{lang}) {
@@ -111,7 +113,7 @@ sub stem {
 	my $self = shift;
 
 	my ($words, $rr);
-	if (ref($self) eq __PACKAGE__) {
+	if (UNIVERSAL::isa($self, 'HASH')) {
 		($words, $rr) = @_;
 	} else {
 		my $lang = $self;
