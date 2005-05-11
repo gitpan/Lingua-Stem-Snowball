@@ -1,3 +1,5 @@
+v0.91	2005-05-10
+	- don't stem empty words
 v0.9	2005-02-07
 	- fix doc ticket #11286 : Error in documentation use of 'english' as valid language descriptor
 	- fix directory mode in CPAN distribution

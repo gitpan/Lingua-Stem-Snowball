@@ -8,7 +8,7 @@ use POSIX qw(locale_h);
 use vars qw($VERSION @ISA @EXPORT_OK $AUTOLOAD %EXPORT_TAGS);
 @ISA = qw(Exporter);
 
-$VERSION = '0.9';
+$VERSION = '0.91';
 
 %EXPORT_TAGS = ('all' => [qw(
 	stemmers stem
@@ -138,6 +138,7 @@ sub stem {
 	my $lexem;
 	if (ref($words)) {
 		foreach my $word (@$words) {
+			next unless $word;
 			$res = Lingua::Stem::Snowball::do_stem($self->{LANG_ID}, $word, $lexem);
 			die "Error in Lingua::Stem::Snowball::do_stem" if ($res < 0);
 			push @lexems, $lexem;
