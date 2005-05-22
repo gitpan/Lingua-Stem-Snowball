@@ -6,7 +6,7 @@ use Lingua::Stem::Snowball qw(:all);
 
 my @lang = stemmers();
 
-plan tests => scalar(@lang) + 13;
+plan tests => scalar(@lang) + 14;
 
 foreach my $l (@lang) {
 	ok('Lingua::Stem::Snowball', ref Lingua::Stem::Snowball->new(lang => $l));
@@ -41,4 +41,7 @@ ok('Lingua::Stem::Snowball', ref($s));
 is($s->lang, '');
 $s->lang('nothing');
 is($@, "Language 'nothing' does not exist");
+
+# Test for mixed case words
+is(stem('fr', 'AIMERA'), stem('fr', 'aimera'));
 

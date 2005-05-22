@@ -10,7 +10,7 @@ lib/Lingua/Stem/Snowball.pm
 Changes
 MANIFEST
 README
-add_stemmer.pl
+bin/add_stemmer.pl
 snowball_src/q/api.c
 snowball_src/q/api.h
 snowball_src/q/header.h

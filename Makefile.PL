@@ -76,6 +76,7 @@ WriteMakefile(
 	OBJECT		=> "Snowball$ext $objects",
 	clean		=> { FILES => "config.c $copyfile" },
 	depend		=> { 'Snowball$ext' => "config.c $headers", },
+	EXE_FILES	=> [ 'bin/add_stemmer.pl' ],
 );
 
 sub MY::postamble{

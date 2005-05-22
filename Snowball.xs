@@ -28,7 +28,7 @@ not_here(char *s)
 }
 
 static double
-constant(char *name, int arg)
+_constant(char *name, int arg)
 {
     errno = 0;
     switch (*name) {
@@ -45,14 +45,14 @@ MODULE = Lingua::Stem::Snowball               PACKAGE = Lingua::Stem::Snowball
 
 
 double
-constant(name,arg)
+_constant(name,arg)
         char *          name
         int             arg
 
 PROTOTYPES: DISABLE
 
 int
-get_stemmer_id(lang)
+_get_stemmer_id(lang)
 	char * lang
 	CODE:
 	int i;
@@ -70,7 +70,7 @@ get_stemmer_id(lang)
 	RETVAL
 
 void
-get_stemmer_list(out)
+_get_stemmer_list(out)
 	SV *out;
 	CODE:
 	AV *ll = (AV*) SvRV(out);
@@ -83,7 +83,7 @@ get_stemmer_list(out)
 	out
 
 int
-do_stem(id,word,lexem)
+_do_stem(id,word,lexem)
 	int	id
 	char *	word
 	SV *	lexem

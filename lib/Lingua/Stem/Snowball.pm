@@ -8,7 +8,7 @@ use POSIX qw(locale_h);
 use vars qw($VERSION @ISA @EXPORT_OK $AUTOLOAD %EXPORT_TAGS);
 @ISA = qw(Exporter);
 
-$VERSION = '0.91';
+$VERSION = '0.92';
 
 %EXPORT_TAGS = ('all' => [qw(
 	stemmers stem
@@ -23,7 +23,7 @@ sub AUTOLOAD {
     my $constname;
     ($constname = $AUTOLOAD) =~ s/.*:://;
     croak "& not defined" if $constname eq 'constant';
-    my $val = constant($constname, (@_ and $_[0] =~ /^\d+$/) ? $_[0] : 0);
+    my $val = _constant($constname, (@_ and $_[0] =~ /^\d+$/) ? $_[0] : 0);
     if ($! != 0) {
         if ($! =~ /Invalid/) {
             $AutoLoader::AUTOLOAD = $AUTOLOAD;
@@ -41,7 +41,7 @@ sub AUTOLOAD {
 sub _get_lang {
 	my ($lang) = @_;
 
-	my $lang_id = Lingua::Stem::Snowball::get_stemmer_id($lang);
+	my $lang_id = Lingua::Stem::Snowball::_get_stemmer_id($lang);
 
 	if ($lang_id < 0) {
 		if ($lang_id == -1) {
@@ -139,13 +139,13 @@ sub stem {
 	if (ref($words)) {
 		foreach my $word (@$words) {
 			next unless $word;
-			$res = Lingua::Stem::Snowball::do_stem($self->{LANG_ID}, $word, $lexem);
-			die "Error in Lingua::Stem::Snowball::do_stem" if ($res < 0);
+			$res = Lingua::Stem::Snowball::_do_stem($self->{LANG_ID}, $word, $lexem);
+			die "Error in Lingua::Stem::Snowball::_do_stem" if ($res < 0);
 			push @lexems, $lexem;
 		}
 	} else {
-		$res = Lingua::Stem::Snowball::do_stem($self->{LANG_ID}, $words, $lexem);
-		die "Error in Lingua::Stem::Snowball::do_stem" if ($res < 0);
+		$res = Lingua::Stem::Snowball::_do_stem($self->{LANG_ID}, $words, $lexem);
+		die "Error in Lingua::Stem::Snowball::_do_stem" if ($res < 0);
 		push @lexems, $lexem;
 	}
 
@@ -161,18 +161,10 @@ sub stem {
 sub stemmers {
 	my @lang;
 
-	Lingua::Stem::Snowball::get_stemmer_list(\@lang);
+	Lingua::Stem::Snowball::_get_stemmer_list(\@lang);
 
 	return @lang;
 }
-
-# Deprecated
-sub snowball {
-	my ($lang, $word, $locale, $rr) = @_;
-
-	stem($lang, $word, $locale, $rr);
-}
-# deprecated
 
 sub DESTROY {
 }
