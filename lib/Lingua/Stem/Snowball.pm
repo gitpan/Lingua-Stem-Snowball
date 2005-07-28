@@ -8,7 +8,7 @@ use POSIX qw(locale_h);
 use vars qw($VERSION @ISA @EXPORT_OK $AUTOLOAD %EXPORT_TAGS);
 @ISA = qw(Exporter);
 
-$VERSION = '0.92';
+$VERSION = '0.93';
 
 %EXPORT_TAGS = ('all' => [qw(
 	stemmers stem
@@ -73,6 +73,16 @@ sub lang {
 	return $self->{LANG};
 }
 
+sub strip_apostrophes {
+	my $self = shift;
+
+	if (my $boolean = shift) {
+		$self->{STRIP_APOSTROPHES} = $boolean ? 1 : 0;
+	}
+
+	return $self->{STRIP_APOSTROPHES};
+}
+
 sub locale {
 	my ($self, $locale) = @_;
 
@@ -104,9 +114,12 @@ sub new {
 	$self->{LOCALE} = undef;
 	$self->{LOCALE} = $opt{locale} if defined $opt{locale};
 
-        bless ($self, $class);
+  $self->{STRIP_APOSTROPHES} = 0;
+	$self->{STRIP_APOSTROPHES} = $opt{strip_apostrophes} if defined $opt{strip_apostrophes};
 
-        return $self;
+  bless ($self, $class);
+
+  return $self;
 }
 
 sub stem {
@@ -138,13 +151,16 @@ sub stem {
 	my $lexem;
 	if (ref($words)) {
 		foreach my $word (@$words) {
-			next unless $word;
-			$res = Lingua::Stem::Snowball::_do_stem($self->{LANG_ID}, $word, $lexem);
+			unless ($word) {
+			  push @lexems, '';
+			  next;
+			}
+			$res = Lingua::Stem::Snowball::_do_stem($self->{LANG_ID}, $word, $lexem, $self->{STRIP_APOSTROPHES});
 			die "Error in Lingua::Stem::Snowball::_do_stem" if ($res < 0);
 			push @lexems, $lexem;
 		}
 	} else {
-		$res = Lingua::Stem::Snowball::_do_stem($self->{LANG_ID}, $words, $lexem);
+		$res = Lingua::Stem::Snowball::_do_stem($self->{LANG_ID}, $words, $lexem, $self->{STRIP_APOSTROPHES});
 		die "Error in Lingua::Stem::Snowball::_do_stem" if ($res < 0);
 		push @lexems, $lexem;
 	}
@@ -282,9 +298,9 @@ locale: locale.
 
 Returns the stemmed word for $word.
 
-=item my @stemmed = $dict->stem(\@word)
+=item my @stemmed = $dict->stem(\@words)
 
-Returns an array of the stemmed words contained in @word.
+Returns an array of the stemmed words contained in @words.
 
 =item $dict->lang([$lang])
 
@@ -299,6 +315,24 @@ Accessor for the locale parameter.
 
 Returns a list of all available languages with a stemmer.
 
+=item $dict->strip_apostrophes([1|0])
+
+By default, the stemmer will not strip apostrophes for you. So,
+if you make the following call:
+
+  my @words = ('The', 'Ranger\'s', 'Digest');
+  my @stemmed = $dict->stem(\@words);
+
+The result might not be what you expected (if you split(' ') a user search entry for example).
+
+Stripping 's in perl can be a little expensive, so you can let the stemmer do it in C:
+
+  my @words = ('The', 'Ranger\'s', 'Digest');
+  $dict->strip_apostrophes(1);
+  my @stemmed = $dict->stem(\@words);
+
+This method strips 's (english) and l', d', ... (french).
+
 =back
 
 =head1 REQUESTS & BUGS
@@ -311,7 +345,7 @@ Please check to see if your bug has already been reported.
 
 =head1 COPYRIGHT
 
-Copyright 2004
+Copyright 2004-2005
 
 Currently maintained by Fabien Potencier, fabpot@cpan.org
 Original authors Oleg Bartunov, oleg@sai.msu.su, Teodor Sigaev, teodor@stack.net

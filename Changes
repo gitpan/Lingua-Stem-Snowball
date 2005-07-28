@@ -1,3 +1,8 @@
+v0.93	2005-07-28
+  - fix ticket #13900 : cease stripping of empty array elements
+    be careful that this fix may break your scripts
+  - fix ticket #13898 : apostrophe s in English stemmer
+    new method strip_apostrophes() added
 v0.92	2005-05-22
 	- removed deprecated 'snowball' function
 	- added tests for Pod and Pod coverage

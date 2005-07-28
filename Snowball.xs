@@ -83,10 +83,11 @@ _get_stemmer_list(out)
 	out
 
 int
-_do_stem(id,word,lexem)
+_do_stem(id,word,lexem,strip_apostrophes)
 	int	id
 	char *	word
 	SV *	lexem
+	int	strip_apostrophes
 	CODE:
 	int len = strlen(word);
 	unsigned char *win = (unsigned char *)word;
@@ -101,7 +102,17 @@ _do_stem(id,word,lexem)
 
 		for(i=0;i<len;i++)
 			win[i] = tolower( (unsigned char)win[i] );
-		SN_set_current(z, len, win);
+
+    if (strip_apostrophes == 1) {
+      if (win[len - 2] == '\'')
+    		SN_set_current(z, len - 2, win);
+      else if (win[1] == '\'')
+  		  SN_set_current(z, len - 2, win + 2);
+      else
+  		  SN_set_current(z, len, win);
+    } else {
+  		SN_set_current(z, len, win);
+    }
 		RETVAL = (*stemmers[id].stem)( z );
 		if ( z->l && z->p )
 			sv_setpvn( lexem, z->p, z->l ); 
