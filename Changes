@@ -1,3 +1,16 @@
+v0.94
+  - improved speed
+  - added stem_in_place
+  - added UTF-8 stemmers and encoding parameter 
+  - updated to latest version of libstemmer_c from snowball.tartarus.org
+  - many internal changes
+  - change from EUMM to Module::Build
+  - apostrophe stripping is now always on and handled natively for English
+  - strip_apostrophe method deprecated; has no impact on stemming behavior
+  - removed bin/add_stemmer.pl
+  - added bin/benchmark_stemmers.plx
+  - added bin/generate_tests.plx
+  - updated documentation
 v0.93	2005-07-28
   - fix ticket #13900 : cease stripping of empty array elements
     be careful that this fix may break your scripts

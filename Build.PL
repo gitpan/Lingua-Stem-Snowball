@@ -1,0 +1,17 @@
+use strict;
+use warnings;
+use Module::Build;
+
+my $builder = Module::Build->new(
+    module_name       => 'Lingua::Stem::Snowball',
+    license           => 'perl',
+    dist_author       => 'Marvin Humphrey <marvin at rectangular dot com>',
+    dist_version_from => 'lib/Lingua/Stem/Snowball.pm',
+    requires          => { 'Test::More' => 0, },
+    add_to_cleanup    =>
+        [ 'Lingua-Stem-Snowball-*', 'MANIFEST.bak', 'Makefile' ],
+    create_makefile_pl => 'passthrough',
+    c_source           => 'libstemmer_c',
+);
+
+$builder->create_build_script();
