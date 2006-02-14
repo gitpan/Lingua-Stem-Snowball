@@ -1,84 +1,91 @@
 #!/usr/bin/perl
 
 use strict;
-use Test::More;
-use Lingua::Stem::Snowball qw( :all );
-use locale;
-use POSIX qw( locale_h );
+use Test::More tests => 8484;
+use Lingua::Stem::Snowball qw( stem );
 use File::Spec;
 
-my %ok_lang = map { $_ => 1 } (qw( da de dk en es fi fr it no pt sv ));
+my @languages = qw( en da de es fi fr it nl no pt ru sv );
+my $stemmer   = Lingua::Stem::Snowball->new();
 
-# We skip if we don't have the locale
-my $locales;
-foreach my $lang ( keys %ok_lang ) {
-    my $old_locale = setlocale(LC_CTYPE);
-    my $ret        = setlocale( LC_CTYPE, "$lang\_" . uc($lang) );
-    my $locale     = defined($ret) ? "$lang\_" . uc($lang) : '';
-    unless ($locale) {
-        my $ret = setlocale( LC_CTYPE, $lang );
-        $locale = defined($ret) ? $lang : '';
+for my $iso (@languages) {
+    my ( @before, @after );
+    my $encoding;
+
+    # set language
+    $stemmer->lang($iso);
+
+    # test ISO-8859-1 / KOI8-R vocab
+    $encoding = $iso eq 'ru' ? 'KOI8-R' : 'ISO-8859-1';
+    my $default_enc_voc_path
+        = File::Spec->catfile( 't', 'test_voc', "$iso.default_enc" );
+    open( my $default_enc_voc_fh, '<', $default_enc_voc_path )
+        or die "Couldn't open file '$default_enc_voc_path' for reading: $!";
+    $stemmer->encoding($encoding);
+    while (<$default_enc_voc_fh>) {
+        chomp;
+        my ( $raw, $expected ) = split;
+        push @before, $raw;
+        push @after,  $expected;
+        test_singles( $raw, $expected, $iso, $encoding );
     }
-    if ($locale) {
-        $locales->{$lang} = $locale;
+    test_arrays( \@before, \@after, $iso, $encoding );
+
+    # test UTF-8 vocab
+    $encoding = 'UTF-8';
+    @before   = ();
+    @after    = ();
+    my $utf8_voc_path = File::Spec->catfile( 't', 'test_voc', "$iso.utf8" );
+    open( my $utf8_voc_fh, '<:utf8', $utf8_voc_path )
+        or die "Couldn't open file '$utf8_voc_path' for reading: $!";
+    $stemmer->encoding($encoding);
+    while (<$utf8_voc_fh>) {
+        chomp;
+        my ( $raw, $expected ) = split;
+        push @before, $raw;
+        push @after,  $expected;
+        test_singles( $raw, $expected, $iso, $encoding );
     }
-    else {
-        delete $ok_lang{$lang};
-    }
-    setlocale( LC_CTYPE, $old_locale );
+    test_arrays( \@before, \@after, $iso, $encoding );
+
 }
 
-my $tests_file = File::Spec->catfile( 't', 'tests.txt' );
+sub test_singles {
+    my ( $raw, $expected, $iso, $encoding ) = @_;
 
-my $tests = 0;
-my ( $words, $results );
-open( I, "<$tests_file" );
-while (<I>) {
-    s/\s+$//g;
-    my ( $lang, $test, $result ) = split /\|/;
-    if ( $ok_lang{$lang} ) {
-        push @{ $words->{$lang} },   $test;
-        push @{ $results->{$lang} }, $result;
-        $tests++;
-    }
-}
-close(I);
+    my $got = $stemmer->stem($raw);
+    is( $got, $expected, "$iso \$s->stem(\$raw)" );
 
-plan tests => 3 * $tests + 2 * scalar( keys %ok_lang ) + 1;
-
-ok(1);
-unless ( scalar( keys %ok_lang ) ) {
-    exit(0);
-}
-
-my $last_lang = '';
-my $stem      = Lingua::Stem::Snowball->new();
-open( I, "<$tests_file" ) or die $!;
-while (<I>) {
-    s/\s+$//g;
-    my ( $lang, $test, $result ) = split /\|/;
-
-    next unless $ok_lang{$lang};
-
-    if ( $lang ne $last_lang ) {
-        $stem->lang($lang);
-        $stem->locale( $locales->{$lang} );
+    if ( $encoding ne 'UTF-8' ) {
+        $got = stem( $iso, $raw );
+        is( $got, $expected, "$iso stem(\$lang, \$raw)" );
     }
 
-    is( $stem->stem($test), $result );
-    is( stem( $lang, $test ), $result, $locales->{$lang} );
-    is( $stem->stem( uc($test) ), $result );
+    $got = $stemmer->stem( uc($raw) );
+    is( $got, $expected, "$iso \$s->stem(uc(\$raw))" );
 
-    $last_lang = $lang;
+    $got = [$raw];
+    $stemmer->stem_in_place($got);
+    is( $got->[0], $expected, "$iso \$s->stem_in_place(\$raw)" );
 }
-close(I);
 
-foreach my $lang ( keys %ok_lang ) {
-    $stem->lang($lang);
-    $stem->locale( $locales->{$lang} );
-    my @results = $stem->stem( $words->{$lang} );
-    ok( eq_array( \@results, \@{ $results->{$lang} } ) );
+sub test_arrays {
+    my ( $raw, $expected, $iso, $encoding ) = @_;
 
-    my @results1 = stem( $lang, $words->{$lang} );
-    ok( eq_array( \@results1, \@{ $results->{$lang} } ) );
+    my @got = $stemmer->stem($raw);
+    is_deeply( \@got, $expected, "$iso \$s->stem(\@raw)" );
+
+    if ( $encoding ne 'UTF-8' ) {
+        @got = stem( $iso, $raw );
+        is_deeply( \@got, $expected, "$iso stem(\$lang, \@raw)" );
+    }
+
+    my @uppercased = map {uc} @$raw;
+    @got = $stemmer->stem( \@uppercased );
+    is_deeply( \@got, $expected, "$iso \$s->stem(\@raw) (uc'd)" );
+
+    @got = @$raw;
+    $stemmer->stem_in_place( \@got );
+    is_deeply( \@got, $expected, "$iso \$s->stem_in_place(\@raw)" );
 }
+

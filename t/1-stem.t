@@ -22,22 +22,24 @@ is( 'Lingua::Stem::Snowball', ref($stemmer), "constuct a stemmer" );
 is( $stemmer->lang, $languages[0], "stemmer has the expected language" );
 
 $stemmer = Lingua::Stem::Snowball->new();
-is( 'Lingua::Stem::Snowball', ref($stemmer), "Construct stemmer with no args" );
+is( 'Lingua::Stem::Snowball', ref($stemmer),
+    "Construct stemmer with no args" );
 is( $stemmer->lang, '', "stemmer has empty string for language" );
 $stemmer->lang( $languages[0] );
 is( $stemmer->lang, $languages[0], "reset the language", );
 $stemmer->lang('nothing');
-is( $stemmer->lang, $languages[0], 
+is( $stemmer->lang, $languages[0],
     "resetting the language to an invalid value silently fails" );
 $stemmer->lang( uc( $languages[0] ) );
-is( $stemmer->lang, $languages[0], "tolerate uppercase versions of ISO codes" );
+is( $stemmer->lang, $languages[0],
+    "tolerate uppercase versions of ISO codes" );
 
 $stemmer = Lingua::Stem::Snowball->new();
-is( $stemmer->stem('foo'), undef, "with no lang, stem returns undef");
+is( $stemmer->stem('foo'), undef, "with no lang, stem returns undef" );
 is( $stemmer->stem(), undef, "with no input, stem returns undef" );
 
 # Test for bug #7510 - [ not really, bug 7510 has to do with subclassing ]
-is( stem( 'fr', 'été' ), 'été', "functional interface" );
+is( stem( 'fr', 'été' ),    'été',  "functional interface" );
 is( stem( 'en', 'horses' ), 'hors', "functional interface" );
 
 # Tests for bug #7509
@@ -45,12 +47,16 @@ $stemmer = Lingua::Stem::Snowball->new();
 is( 'Lingua::Stem::Snowball', ref($stemmer), "it's a Snowball, alright" );
 is( $stemmer->lang, '', "empty language" );
 $stemmer->lang('nothing');
-is( $@, "Language 'nothing' does not exist", 
-    "correct error message for invalid language" );
+is( $@,
+    "Language 'nothing' does not exist",
+    "correct error message for invalid language"
+);
 
 # Test for mixed case words
-is( stem( 'fr', 'AIMERA' ), stem( 'fr', 'aimera' ), 
-    "stemmer lowercases uppercase source" );
+is( stem( 'fr', 'AIMERA' ),
+    stem( 'fr', 'aimera' ),
+    "stemmer lowercases uppercase source"
+);
 
 # Test for bug #13900
 $stemmer = Lingua::Stem::Snowball->new( lang => 'en' );
@@ -66,3 +72,4 @@ my @stemmed_ok = ( 'foo', 'ranger', 'bar' );
 $stemmer->strip_apostrophes(1);
 @stemmed = $stemmer->stem( \@stemmable );
 ok( eq_array( \@stemmed_ok, \@stemmed ), "apostrophe s" );
+

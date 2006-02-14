@@ -76,10 +76,8 @@ t/0-load.t
 t/1-stem.t
 t/2-full.t
 t/3-subclass.t
-t/4-encodings.t
 t/98-TestPod.t
 t/99-TestPodCoverage.t
-t/MyStem.pm
 t/test_voc/da.default_enc
 t/test_voc/da.utf8
 t/test_voc/de.default_enc
@@ -104,4 +102,3 @@ t/test_voc/ru.default_enc
 t/test_voc/ru.utf8
 t/test_voc/sv.default_enc
 t/test_voc/sv.utf8
-t/tests.txt

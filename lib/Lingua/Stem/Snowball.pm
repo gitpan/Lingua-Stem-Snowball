@@ -3,8 +3,6 @@ use strict;
 
 use Carp;
 use Exporter;
-use locale;
-use POSIX qw(locale_h);
 use vars qw(
     $VERSION
     @ISA
@@ -15,11 +13,11 @@ use vars qw(
     %instance_vars
 );
 
-$VERSION = '0.94_3';
+$VERSION = '0.94';
 
-@ISA = qw( Exporter );
+@ISA         = qw( Exporter );
 %EXPORT_TAGS = ( 'all' => [qw( stemmers stem )] );
-@EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
+@EXPORT_OK   = ( @{ $EXPORT_TAGS{'all'} } );
 
 require XSLoader;
 XSLoader::load( 'Lingua::Stem::Snowball', $VERSION );
@@ -58,7 +56,7 @@ sub stem {
     }
     else {
         ( $lang, $words, $locale, $is_stemmed ) = @_;
-        $self = __PACKAGE__->new( lang => $lang, locale => $locale );
+        $self = __PACKAGE__->new( lang => $lang );
     }
 
     # bail if we don't have a valid lang
@@ -67,23 +65,10 @@ sub stem {
     # bail if there's no input
     return undef unless ( ref($words) or length($words) );
 
-    # save old locale and obey $self->{locale}, if it was set
-    my $old_locale;
-    if ( defined $self->{locale} ) {
-        $old_locale = setlocale(LC_CTYPE);
-        my $ret = setlocale( LC_CTYPE, $self->{locale} );
-        warn "Can't set locale $self->{locale}" unless defined($ret);
-    }
-
     # duplicate the input array and transform it into an array of stems
     $words = ref($words) ? $words : [$words];
     my @stems = map {lc} @$words;
     $self->stem_in_place( \@stems );
-
-    # restore original locale
-    if ( defined $self->{locale} ) {
-        setlocale( LC_CTYPE, $old_locale );
-    }
 
     # determine whether any stemming took place, if requested
     if ( ref($is_stemmed) ) {
@@ -109,8 +94,8 @@ sub lang {
         $lang = lc($lang);
         $lang = $lang eq 'dk' ? 'nl' : $lang;    # backwards compat
         if ( _validate_language($lang) ) {
-            $self->{lang}       = $lang;
-        # force stemmer_id regen at next call to stem_in_place
+            $self->{lang} = $lang;
+            # force stemmer_id regen at next call to stem_in_place
             $self->{stemmer_id} = -1;
         }
         else {
@@ -125,14 +110,14 @@ sub encoding {
     if ( defined $encoding ) {
         croak("Invalid value for encoding: '$encoding'")
             unless $encoding =~ /^(?:UTF-8|KOI8-R|ISO-8859-1)$/;
-        $self->{encoding}   = $encoding;
+        $self->{encoding} = $encoding;
         # force stemmer_id regen at next call to stem_in_place
         $self->{stemmer_id} = -1;
     }
     return $self->{encoding};
 }
 
-# deprecated, and no longer has an effect on stemming behavior
+# deprecated, has no effect on stemming behavior
 sub strip_apostrophes {
     my ( $self, $boolean ) = @_;
     if ( defined $boolean ) {
@@ -141,6 +126,7 @@ sub strip_apostrophes {
     return $self->{strip_apostrophes};
 }
 
+# deprecated, has no effect on stemming behavior
 sub locale {
     my ( $self, $locale ) = @_;
     if ($locale) {
@@ -178,13 +164,11 @@ to match documents which contain other forms of that term.
 This module is very similar to L<Lingua::Stem|Lingua::Stem> -- however,
 Lingua::Stem is pure Perl, while Lingua::Stem::Snowball is an XS module which
 provides a Perl interface to the C version of the Snowball stemmers.
-(L<http://snowball.tartarus.org>).  It was originally developed to provide
-access to stemming algorithms for the OpenFTS (full text search engine) 
-project (L<http://openfts.sourceforge.net>).
+(L<http://snowball.tartarus.org>).  
 
 =head2 Supported Languages
 
-The following stemmers are available (as of Lingua::Stem 0.94):
+The following stemmers are available (as of Lingua::Stem::Snowball 0.94):
 
     |-----------------------------------------------------------|
     | Language   | ISO code | default encoding | also available |
@@ -205,20 +189,21 @@ The following stemmers are available (as of Lingua::Stem 0.94):
 
 =head2 Benchmarks
 
-Here is a comparison of Lingua::Stem::Snowball and Lingua::Stem, using Mark
-Twain's "Huckleberry Finn" as source material.  It was produced on a 3.2GHz
-Pentium 4 running FreeBSD 5.3 and Perl 5.8.7.  (The benchmarking script is
-included in this distribution: bin/benchmark_stemmers.plx.)
+Here is a comparison of Lingua::Stem::Snowball and Lingua::Stem, using The
+Works of Edgar Allen Poe, volumes 1-5 (via Project Gutenberg) as source
+material.  It was produced on a 3.2GHz Pentium 4 running FreeBSD 5.3 and Perl
+5.8.7.  (The benchmarking script is included in this distribution:
+bin/benchmark_stemmers.plx.)
 
     |--------------------------------------------------------------------|
-    | source: huckfinn.txt        | words: 112527 | unique words: 6447   |
+    | total words: 454285 | unique words: 22748                          |
     |--------------------------------------------------------------------|
     | module                        | config        | avg secs | rate    |
     |--------------------------------------------------------------------|
-    | Lingua::Stem 0.81             | no cache      | 0.460    | 244871  |
-    | Lingua::Stem 0.81             | cache level 2 | 0.293    | 384053  |
-    | Lingua::Stem::Snowball 0.94   | stem          | 0.315    | 356813  |
-    | Lingua::Stem::Snowball 0.94   | stem_in_place | 0.148    | 759556  |
+    | Lingua::Stem 0.81             | no cache      | 2.029    | 223881  |
+    | Lingua::Stem 0.81             | cache level 2 | 1.280    | 355025  |
+    | Lingua::Stem::Snowball 0.94   | stem          | 1.426    | 318636  |
+    | Lingua::Stem::Snowball 0.94   | stem_in_place | 0.641    | 708495  |
     |--------------------------------------------------------------------|
 
 =head1 METHODS / FUNCTIONS
@@ -228,7 +213,6 @@ included in this distribution: bin/benchmark_stemmers.plx.)
     my $stemmer = Lingua::Stem::Snowball->new(
         lang     => 'es', 
         encoding => 'UTF-8',
-        locale   => 'es_ES.UTF-8',
     );
     die $@ if $@;
 
@@ -245,12 +229,6 @@ B<lang>: An ISO code taken from the table of supported languages, above.
 
 B<encoding>: A supported character encoding.
 
-=item *
-
-B<locale>: A valid locale on your system (see L<perllocale|perllocale>).  The
-only possible effect that this has is on the automatic lowercasing performed
-by stem().
-
 =back
 
 Be careful with the values you supply to new(). If C<lang> is invalid,
@@ -265,14 +243,17 @@ change: stem() will always return undef, and stem_in_place() will be a no-op.
     @stemmed = stem( ISO_CODE, WORDS, [LOCALE, IS_STEMMED] );
 
 Return lowercased and stemmed output.  WORDS may be either an array of words
-or a single scalar word.  IS_STEMMED must be a reference to a scalar; if it is
-supplied, it will be set to 1 if the output differs from the input in some
-way, 0 otherwise.
+or a single scalar word.  
 
 In a scalar context, stem() returns the first item in the array of stems:
 
     $stem       = $stemmer->stem($word);
     $first_stem = $stemmer->stem(\@words); # probably wrong
+
+LOCALE has no effect; it is only there as a placeholder for backwards
+compatibility (see Changes).  IS_STEMMED must be a reference to a scalar; if
+it is supplied, it will be set to 1 if the output differs from the input in
+some way, 0 otherwise.
 
 =head2 stem_in_place
  
@@ -298,13 +279,6 @@ supplied ISO code, the language is not changed (but $@ is set).
 
 Accessor/mutator for the encoding parameter.
 
-=head2 locale
-
-    my $locale = $stemmer->locale;
-    $stemmer->locale($locale);
-
-Accessor/mutator for the locale parameter.
-
 =head2 stemmers
 
     my @iso_codes = stemmers();
@@ -314,32 +288,33 @@ Returns a list of all valid language codes.
 
 =begin deprecated
 
-=head2 strip_apostrophes
-
-    $stemmer->strip_apostrophes(1)
-
-Deprecated.  Apostrophe handling is now handled automatically by the Snowball
-library and setting this no longer has any effect on stemming behavior.
+=head2 strip_apostrophes locale
 
 =end deprecated
 
 =head1 REQUESTS & BUGS
 
 Please report any requests, suggestions or bugs via the RT bug-tracking system
-at http://rt.cpan.org/ or email to bug-Lingua-Stem-Snowball\@rt.cpan.org. 
+at http://rt.cpan.org/ or email to bug-Lingua-Stem-Snowball@rt.cpan.org. 
 
 http://rt.cpan.org/NoAuth/Bugs.html?Dist=Lingua-Stem-Snowball is the RT queue
 for Lingua::Stem::Snowball.  Please check to see if your bug has already been
 reported. 
 
-=head1 COPYRIGHT
+=head1 AUTHORS
 
-Copyright 2004-2006
+Lingua::Stem::Snowball was originally developed to provide
+access to stemming algorithms for the OpenFTS (full text search engine) 
+project (L<http://openfts.sourceforge.net>), by Oleg Bartunov, E<lt>oleg at
+sai dot msu dot suE<gt> and Teodor Sigaev, E<lt>teodor at stack dot netE<gt>.
 
 Currently maintained by Marvin Humphrey E<lt>marvin at rectangular dot
 comE<gt>.  Previously maintained by Fabien Potencier E<lt>fabpot at cpan dot
-orgE<gt>.  Original authors Oleg Bartunov, E<lt>oleg at sai dot msu dot
-suE<gt>, Teodor Sigaev, E<lt>teodor at stack dot netE<gt>.
+orgE<gt>.  
+
+=head1 COPYRIGHT
+
+Copyright 2004-2006
 
 This software may be freely copied and distributed under the same
 terms and conditions as Perl.
