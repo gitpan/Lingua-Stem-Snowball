@@ -1,3 +1,7 @@
+v0.941  2006-08-18
+    * Add ExtUtils::CBuilder and ExtUtils::ParseXS as dependencies now that
+      Module::Build doesn't do it's own C handling.
+
 v0.94   2006-02-14
     * new maintainer Marvin Humphrey
     * improved speed

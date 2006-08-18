@@ -13,7 +13,7 @@ use vars qw(
     %instance_vars
 );
 
-$VERSION = '0.94';
+$VERSION = '0.941';
 
 @ISA         = qw( Exporter );
 %EXPORT_TAGS = ( 'all' => [qw( stemmers stem )] );

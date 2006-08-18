@@ -2,6 +2,7 @@
 #include "perl.h"
 #include "XSUB.h"
 
+#define NEED_sv_2pv_nolen
 #include "../ppport.h"
 
 #define NUMLANG 12
@@ -134,7 +135,6 @@ OUTPUT: RETVAL
 void
 stemmers(...)
 PREINIT:
-    SV  *lang_sv;
     int  i;
 PPCODE:
     for (i = 0; i < NUMLANG; i++) {
@@ -154,7 +154,6 @@ PREINIT:
     IV                 stemmer_id;
     SV                *stemmifier_sv;
     Stemmifier        *stemmifier;
-    char              *word_ptr;
     STRLEN             len;
     SnowStemmer       *stemmer;
     const sb_symbol   *input_text;
@@ -220,7 +219,7 @@ Create a new Stemmifier object.
 
 =cut
 
-SV*
+void
 new(class)
     char* class;
 PREINIT:
