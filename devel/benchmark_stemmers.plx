@@ -15,10 +15,10 @@ my $timer = Benchmark::Timer->new;
 die "Usage: ./bin/benchmark_stemmers.plx TEXTFILES"
     unless @ARGV;
 
-# retrieve, pre-process and tokenize text
+# Retrieve, pre-process and tokenize text.
 sub retrieve_text {
     my $filepath = shift;
-    my $text = do {
+    my $text     = do {
         open( my $fh, '<', $filepath )
             or die "Couldn't open file '$filepath' for reading: $!";
         local $/;
@@ -33,7 +33,7 @@ sub retrieve_text {
 }
 
 my @token_arrays = map { retrieve_text($_) } @ARGV;
-# prepare vars used in the report
+# Prepare vars used in the report.
 my %unique;
 my $num_tokens = 0;
 for my $tokens (@token_arrays) {
@@ -48,7 +48,7 @@ for my $iter ( 1 .. ITERS ) {
     my $snowball    = Lingua::Stem::Snowball->new( lang => 'en' );
     my $lingua_stem = Lingua::Stem->new( -locale        => 'EN' );
 
-    # LS without cache
+    # LS without cache.
     for my $tokens (@token_arrays) {
         $timer->start('LS');
         $out = $lingua_stem->stem(@$tokens);
@@ -56,23 +56,23 @@ for my $iter ( 1 .. ITERS ) {
         undef $out;
     }
 
-    # turn stem_caching on for LS
+    # Turn stem_caching on for LS.
     $lingua_stem->stem_caching( { -level => 2 } );
 
     for my $tokens (@token_arrays) {
-        # LS, with stem caching
+        # LS, with stem caching.
         $timer->start('LS2');
         $out = $lingua_stem->stem(@$tokens);
         $timer->stop('LS2');
         undef $out;
 
-        # LSS
+        # LSS.
         $timer->start('LSS');
         @out = $snowball->stem($tokens);
         $timer->stop('LSS');
         undef @out;
 
-        # stem_in_place, if this version of LSS is recent enough
+        # stem_in_place, if this version of LSS is recent enough.
         if ( $snowball->can('stem_in_place') ) {
             my @copy = @$tokens;
             $timer->start('LSS2');
@@ -81,7 +81,7 @@ for my $iter ( 1 .. ITERS ) {
         }
     }
 
-    # LS's stem_cache is global per locale, so clear it each iter
+    # LS's stem_cache is global per -locale, so clear it each iter.
     $lingua_stem->clear_stem_cache;
 }
 
@@ -89,10 +89,10 @@ my $ls_ver  = $Lingua::Stem::VERSION;
 my $lss_ver = $Lingua::Stem::Snowball::VERSION;
 $lss_ver =~ s/_.*//;
 my %results = $timer->results;
-# make each result the average time per iter to stem all docs 
+# Make each result the average time per iter to stem all docs.
 $_ *= scalar @ARGV for values %results;
 
-# print the report
+# Print the report.
 printf( '
 |--------------------------------------------------------------------|
 | total words: %-6d | unique words: %-6d                         |

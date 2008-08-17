@@ -8,11 +8,11 @@ my $builder = Module::Build->new(
     dist_author       => 'Marvin Humphrey <marvin at rectangular dot com>',
     dist_version_from => 'lib/Lingua/Stem/Snowball.pm',
     requires          => { 'Test::More' => 0, },
-    build_requires => {
+    build_requires    => {
         'ExtUtils::CBuilder' => 0,
         'ExtUtils::ParseXS'  => 0,
-        },
-    add_to_cleanup    =>
+    },
+    add_to_cleanup =>
         [ 'Lingua-Stem-Snowball-*', 'MANIFEST.bak', 'Makefile' ],
     create_makefile_pl => 'passthrough',
     c_source           => 'libstemmer_c',

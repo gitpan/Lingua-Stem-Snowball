@@ -2,21 +2,30 @@
 #include "perl.h"
 #include "XSUB.h"
 
+#define NEED_sv_2pv_flags
 #define NEED_sv_2pv_nolen
 #include "../ppport.h"
 
-#define NUMLANG 12
-#define NUMSTEM 24
+#define NUMLANG 15
+#define NUMSTEM 29
 
 #include "include/libstemmer.h"
 
-typedef struct sb_stemmer SnowStemmer;
+/* All Lingua::Stem::Snowball objects and all calls to stem(),
+ * stem_in_place(), etc, reference the same set of Snowball struct
+ * sb_stemmers, all held in the singleton object
+ * $Lingua::Stem::Snowball::stemmifier, of class
+ * Lingua::Stem::Snowball::Stemmifier.  Each sb_stemmer is created lazily, as
+ * soon as there is a need for its unique combination of language and
+ * encoding.  They are destroyed during global cleanup, when
+ * $Lingua::Stem::Snowball::stemmifier is reclaimed.
+ */
 
-typedef struct stemmifier {
-    SnowStemmer **stemmers;
+typedef struct Stemmifier {
+    struct sb_stemmer **stemmers;
 } Stemmifier;
 
-typedef struct langenc {
+typedef struct LangEnc {
     char *lang;
     char *encoding; /* the real name of the encoding */
     char *snowenc;  /* the variant that libstemmer_c needs */
@@ -30,11 +39,14 @@ LangEnc lang_encs[] = {
     { "es", "ISO-8859-1", "ISO_8859_1" },
     { "fi", "ISO-8859-1", "ISO_8859_1" },
     { "fr", "ISO-8859-1", "ISO_8859_1" },
+    { "hu", "ISO-8859-1", "ISO_8859_1" },
     { "it", "ISO-8859-1", "ISO_8859_1" },
     { "no", "ISO-8859-1", "ISO_8859_1" },
     { "pt", "ISO-8859-1", "ISO_8859_1" },
+    { "ro", "ISO-8859-2", "ISO_8859_2" },
     { "ru", "KOI8-R",     "KOI8_R",    },
     { "sv", "ISO-8859-1", "ISO_8859_1" },
+    { "tr", "UTF-8",      "UTF_8"      },
     { "da", "UTF-8",      "UTF_8"      },
     { "de", "UTF-8",      "UTF_8"      },
     { "nl", "UTF-8",      "UTF_8"      },
@@ -42,9 +54,11 @@ LangEnc lang_encs[] = {
     { "es", "UTF-8",      "UTF_8"      },
     { "fi", "UTF-8",      "UTF_8"      },
     { "fr", "UTF-8",      "UTF_8"      },
+    { "hu", "UTF-8",      "UTF_8"      },
     { "it", "UTF-8",      "UTF_8"      },
     { "no", "UTF-8",      "UTF_8"      },
     { "pt", "UTF-8",      "UTF_8"      },
+    { "ro", "UTF-8",      "UTF_8"      },
     { "ru", "UTF-8",      "UTF_8"      },
     { "sv", "UTF-8",      "UTF_8"      },
 };
@@ -54,53 +68,57 @@ MODULE = Lingua::Stem::Snowball  PACKAGE = Lingua::Stem::Snowball
 PROTOTYPES: disable 
 
 void
-_derive_stemmer(obj_hash)
-    HV *obj_hash;
-PREINIT:
+_derive_stemmer(self_hash)
+    HV *self_hash;
+PPCODE:
+{
+    SV   **sv_ptr;
     char  *lang;
     char  *encoding;
-    SV   **sv_ptr;
-    int i;
-    int stemmer_id;
-PPCODE:
-    /* extract lang and encoding member variables */
-    sv_ptr = hv_fetch(obj_hash, "lang", 4, 0);
+    int    i;
+    int    stemmer_id = -1;
+
+    /* Extract lang and encoding member variables. */
+    sv_ptr = hv_fetch(self_hash, "lang", 4, 0);
     if (!sv_ptr)
         croak("Couldn't find member variable 'lang'");
     lang = SvPV_nolen(*sv_ptr);
-    sv_ptr = hv_fetch(obj_hash, "encoding", 8, 0);
+    sv_ptr = hv_fetch(self_hash, "encoding", 8, 0);
     if (!sv_ptr)
         croak("Couldn't find member variable 'encoding'");
     encoding = SvPV_nolen(*sv_ptr);
 
-    /* see if the combo of lang and encoding is supported */
-    stemmer_id = -1;
+    /* See if the combo of lang and encoding is supported. */
     for(i = 0; i < NUMSTEM; i++) {
         if (   strcmp(lang,     lang_encs[i].lang)     == 0 
             && strcmp(encoding, lang_encs[i].encoding) == 0 
         ) {
-            IV          temp;
             Stemmifier *stemmifier;
             SV         *stemmifier_sv;
 
-            /* we have a match, so we know the stemmer id now */
+            /* We have a match, so we know the stemmer id now. */
             stemmer_id = i;
 
-            /* retrieve communal Stemmifier */
-            stemmifier_sv 
-                = get_sv("Lingua::Stem::Snowball::stemmifier", TRUE);
-            if (!SvROK(stemmifier_sv)) {
-                croak("Internal error: can't access stemmifier");
+            /* Retrieve communal Stemmifier. */
+            stemmifier_sv = get_sv("Lingua::Stem::Snowball::stemmifier", TRUE);
+            if (   sv_isobject(stemmifier_sv)
+                && sv_derived_from(stemmifier_sv, 
+                    "Lingua::Stem::Snowball::Stemmifier")
+            ) {
+                IV tmp = SvIV(SvRV(stemmifier_sv));
+                stemmifier = INT2PTR(Stemmifier*, tmp);
             }
-            temp = SvIV(SvRV(stemmifier_sv));
-            stemmifier = INT2PTR(Stemmifier*, temp);
+            else {
+                croak("$L::S::S::stemmifier isn't a Stemmifier");
+            }
 
-            /* construct a stemmer for lang/enc if there isn't one yet */
+            /* Construct a stemmer for lang/enc if there isn't one yet. */
             if ( ! stemmifier->stemmers[stemmer_id] ) {
                 stemmifier->stemmers[stemmer_id] 
                     = sb_stemmer_new(lang, lang_encs[stemmer_id].snowenc);
                 if ( ! stemmifier->stemmers[stemmer_id]  ) {
-                    croak("Failed to allocate an sb_stemmer - out of mem");
+                    croak("Failed to allocate an sb_stemmer for %s %s", lang,
+                        encoding);
                 }
             } 
 
@@ -108,73 +126,64 @@ PPCODE:
         }
     }
 
-    /* set the value of $self->{stemmer_id} */
-    sv_ptr = hv_fetch(obj_hash, "stemmer_id", 10, 0);
+    /* Set the value of $self->{stemmer_id}. */
+    sv_ptr = hv_fetch(self_hash, "stemmer_id", 10, 0);
     if (!sv_ptr)
         croak("Couldn't access $self->{stemmer_id}");
     sv_setiv(*sv_ptr, stemmer_id);
+}
 
 bool
-_validate_language(lang_sv)
-    SV *lang_sv;
-PREINIT:
-    char   *lang;
-    STRLEN  len;
-    int     i;
+_validate_language(language)
+    const char *language;
 CODE:
-    lang = SvPV(lang_sv, len);
-
+{
+    int i;
     RETVAL = FALSE;
     for (i = 0; i < NUMLANG; i++) {
-        if ( strcmp(lang, lang_encs[i].lang) == 0 )
-            RETVAL = TRUE;
+        if ( strcmp(language, lang_encs[i].lang) == 0 ) RETVAL = TRUE;
     }
+}
 OUTPUT: RETVAL
-
 
 void
 stemmers(...)
-PREINIT:
-    int  i;
 PPCODE:
+{
+    int i;
     for (i = 0; i < NUMLANG; i++) {
         XPUSHs( sv_2mortal(
             newSVpvn( lang_encs[i].lang, strlen(lang_encs[i].lang) )
         ));
     }
     XSRETURN(NUMLANG);
+}
 
 void
-stem_in_place(obj, words_av)
-    SV  *obj;
+stem_in_place(self_hash, words_av)
+    HV  *self_hash;
     AV  *words_av;
-PREINIT:
-    HV                *obj_hash;
-    SV               **sv_ptr;
-    IV                 stemmer_id;
-    SV                *stemmifier_sv;
-    Stemmifier        *stemmifier;
-    STRLEN             len;
-    SnowStemmer       *stemmer;
-    const sb_symbol   *input_text;
-    const sb_symbol   *stemmed_output;
-    IV                 i, max;
 PPCODE:
-    /* extract hash from object */
-    if (SvROK(obj) && SvTYPE(SvRV(obj))==SVt_PVHV)
-        obj_hash = (HV*)SvRV(obj);
-    else    
-        croak("not a hash reference");
-
-    /* retrieve the stemmifier */
+{
+    IV stemmer_id;
+    SV **sv_ptr;
+    Stemmifier *stemmifier;
+    SV *stemmifier_sv;
+    
+    /* Retrieve the stemmifier. */
     stemmifier_sv = get_sv("Lingua::Stem::Snowball::stemmifier", TRUE);
-    if(!SvROK(stemmifier_sv))
+    if (   sv_isobject(stemmifier_sv)
+        && sv_derived_from(stemmifier_sv, "Lingua::Stem::Snowball::Stemmifier")
+    ) {
+        IV tmp = SvIV(SvRV(stemmifier_sv));
+        stemmifier = INT2PTR(Stemmifier*, tmp);
+    }
+    else {
         croak("$Lingua::Stem::Snowball::stemmifier isn't a Stemmifier");
-    i = SvIV(SvRV(stemmifier_sv));
-    stemmifier = INT2PTR(Stemmifier*, i);
+    }
 
-    /* figure out which sb_stemmer to use */
-    sv_ptr = hv_fetch(obj_hash, "stemmer_id", 10, 0);
+    /* Figure out which sb_stemmer to use. */
+    sv_ptr = hv_fetch(self_hash, "stemmer_id", 10, 0);
     if (!sv_ptr)
         croak("Couldn't access stemmer_id");
     stemmer_id = SvIV(*sv_ptr);
@@ -186,66 +195,61 @@ PPCODE:
         ENTER;
         SAVETMPS;
         PUSHMARK(SP);
-        XPUSHs(obj);
+        XPUSHs(ST(0));
         PUTBACK;
         call_method("_derive_stemmer", G_DISCARD);
         FREETMPS;
         LEAVE;
     
-        /* extract what should now be a valid stemmer_id */
-        sv_ptr = hv_fetch(obj_hash, "stemmer_id", 10, 0);
+        /* Extract what should now be a valid stemmer_id. */
+        sv_ptr = hv_fetch(self_hash, "stemmer_id", 10, 0);
         stemmer_id = SvIV(*sv_ptr);
     }
 	if (stemmer_id != -1) {
-		stemmer = stemmifier->stemmers[stemmer_id];
+		struct sb_stemmer *stemmer = stemmifier->stemmers[stemmer_id];
+        IV i, max;
 
-		max = av_len(words_av);
-		for (i = 0; i <= max; i++) {
+		for (i = 0, max = av_len(words_av); i <= max; i++) {
 			sv_ptr = av_fetch(words_av, i, 0);
-			if (!SvOK(*sv_ptr))
-				continue;
-			input_text     = (const sb_symbol*)SvPV(*sv_ptr, len);
-			stemmed_output = sb_stemmer_stem(stemmer, input_text, (int)len);
-			len = sb_stemmer_length(stemmer);
-			sv_setpvn(*sv_ptr, (char*)stemmed_output, len);
+			if (SvOK(*sv_ptr)) {
+                STRLEN len;
+                sb_symbol *input_text = (sb_symbol*)SvPV(*sv_ptr, len);
+                const sb_symbol *stemmed_output 
+                    = sb_stemmer_stem(stemmer, input_text, (int)len);
+                len = sb_stemmer_length(stemmer);
+                sv_setpvn(*sv_ptr, (char*)stemmed_output, len);
+            }
 		}
 	}
+}
 
 MODULE = Lingua::Stem::Snowball PACKAGE = Lingua::Stem::Snowball::Stemmifier
 
-=for comment
-
-Create a new Stemmifier object.
-
-=cut
-
-void
-new(class)
-    char* class;
-PREINIT:
+SV*
+new(class_name)
+    const char* class_name;
+CODE:
+{
     Stemmifier *stemmifier;
-PPCODE:
     New(0, stemmifier, 1, Stemmifier);
-    Newz(0, stemmifier->stemmers, NUMSTEM, SnowStemmer*);
-    ST(0) = sv_newmortal();
-    sv_setref_pv(ST(0), class, (void*)stemmifier);
-    XSRETURN(1);
+    Newz(0, stemmifier->stemmers, NUMSTEM, struct sb_stemmer*);
+    RETVAL = newSV(0);
+    sv_setref_pv(RETVAL, class_name, (void*)stemmifier);
+}
+OUTPUT: RETVAL
 
 void
-DESTROY(obj_ref)
-    SV *obj_ref;
-PREINIT:
-    Stemmifier *stemmifier;
-    IV          temp;
-    int         i;
+DESTROY(self_sv)
+    SV *self_sv;
 PPCODE:
-    temp = SvIV( SvRV(obj_ref) );
-    stemmifier = INT2PTR(Stemmifier*, temp);
+{
+    int i;
+    IV temp = SvIV( SvRV(self_sv) );
+    Stemmifier *stemmifier = INT2PTR(Stemmifier*, temp);
     for (i = 0; i < NUMSTEM; i++) {
         if (stemmifier->stemmers[i] != NULL)
             sb_stemmer_delete(stemmifier->stemmers[i]);
     }
     Safefree(stemmifier);
-    
-    
-    
+}
+
