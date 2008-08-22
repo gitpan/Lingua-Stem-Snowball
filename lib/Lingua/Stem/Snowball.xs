@@ -135,7 +135,7 @@ PPCODE:
 
 bool
 _validate_language(language)
-    const char *language;
+    char *language;
 CODE:
 {
     int i;
@@ -227,7 +227,7 @@ MODULE = Lingua::Stem::Snowball PACKAGE = Lingua::Stem::Snowball::Stemmifier
 
 SV*
 new(class_name)
-    const char* class_name;
+    char* class_name;
 CODE:
 {
     Stemmifier *stemmifier;

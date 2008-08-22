@@ -123,3 +123,4 @@ t/test_voc/ru.utf8
 t/test_voc/sv.default_enc
 t/test_voc/sv.utf8
 t/test_voc/tr.utf8
+typemap

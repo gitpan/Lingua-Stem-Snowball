@@ -7,8 +7,11 @@ my $builder = Module::Build->new(
     license           => 'perl',
     dist_author       => 'Marvin Humphrey <marvin at rectangular dot com>',
     dist_version_from => 'lib/Lingua/Stem/Snowball.pm',
-    requires          => { 'Test::More' => 0, },
-    build_requires    => {
+    requires          => {
+        'Test::More' => 0,
+        'perl'       => '5.6.2',
+    },
+    build_requires => {
         'ExtUtils::CBuilder' => 0,
         'ExtUtils::ParseXS'  => 0,
     },

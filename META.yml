@@ -1,6 +1,6 @@
 ---
 name: Lingua-Stem-Snowball
-version: 0.95
+version: 0.951
 author:
   - 'Marvin Humphrey <marvin at rectangular dot com>'
 abstract: Perl interface to Snowball stemmers.
@@ -9,13 +9,14 @@ resources:
   license: http://dev.perl.org/licenses/
 requires:
   Test::More: 0
+  perl: 5.6.2
 build_requires:
   ExtUtils::CBuilder: 0
   ExtUtils::ParseXS: 0
 provides:
   Lingua::Stem::Snowball:
     file: lib/Lingua/Stem/Snowball.pm
-    version: 0.95
+    version: 0.951
 generated_by: Module::Build version 0.2808
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.2.html

@@ -1,6 +1,7 @@
 package Lingua::Stem::Snowball;
 use strict;
 use warnings;
+use 5.006002;
 
 use Carp;
 use Exporter;
@@ -14,7 +15,7 @@ use vars qw(
     %instance_vars
 );
 
-$VERSION = '0.95';
+$VERSION = '0.951';
 
 @ISA         = qw( Exporter DynaLoader );
 %EXPORT_TAGS = ( 'all' => [qw( stemmers stem )] );
