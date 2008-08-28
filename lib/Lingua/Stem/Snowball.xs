@@ -67,6 +67,25 @@ MODULE = Lingua::Stem::Snowball  PACKAGE = Lingua::Stem::Snowball
 
 PROTOTYPES: disable 
 
+BOOT:
+{
+    SV *sb_stemmer_list_sv   = newSViv(PTR2IV(sb_stemmer_list));
+    SV *sb_stemmer_new_sv    = newSViv(PTR2IV(sb_stemmer_new));
+    SV *sb_stemmer_delete_sv = newSViv(PTR2IV(sb_stemmer_delete));
+    SV *sb_stemmer_stem_sv   = newSViv(PTR2IV(sb_stemmer_stem));
+    SV *sb_stemmer_length_sv = newSViv(PTR2IV(sb_stemmer_length));
+    hv_store(PL_modglobal, "Lingua::Stem::Snowball::sb_stemmer_list", 39,
+        sb_stemmer_list_sv, 0);
+    hv_store(PL_modglobal, "Lingua::Stem::Snowball::sb_stemmer_new", 38,
+        sb_stemmer_new_sv, 0);
+    hv_store(PL_modglobal, "Lingua::Stem::Snowball::sb_stemmer_delete", 41,
+        sb_stemmer_delete_sv, 0);
+    hv_store(PL_modglobal, "Lingua::Stem::Snowball::sb_stemmer_stem", 39,
+        sb_stemmer_stem_sv, 0);
+    hv_store(PL_modglobal, "Lingua::Stem::Snowball::sb_stemmer_length", 41,
+        sb_stemmer_length_sv, 0);
+}
+
 void
 _derive_stemmer(self_hash)
     HV *self_hash;

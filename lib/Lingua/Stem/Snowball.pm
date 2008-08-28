@@ -15,7 +15,7 @@ use vars qw(
     %instance_vars
 );
 
-$VERSION = '0.951';
+$VERSION = '0.952';
 
 @ISA         = qw( Exporter DynaLoader );
 %EXPORT_TAGS = ( 'all' => [qw( stemmers stem )] );
